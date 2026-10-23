@@ -163,7 +163,6 @@ ul.ledger li.empty { color: var(--muted); font-size: 13px; }
 <div class="wrap">
   <header>
     <h1>姊姊的家事零用錢</h1>
-    <span class="demo-tag">示範版・內含範例紀錄</span>
   </header>
 
   <div class="tabs" role="group" aria-label="分頁">
@@ -241,7 +240,7 @@ ul.ledger li.empty { color: var(--muted); font-size: 13px; }
 
   <div class="foot">
     <span>紀錄只存在這個瀏覽器</span>
-    <button id="reset">重設範例資料</button>
+    <button id="reset">清空全部紀錄</button>
   </div>
 </div>
 
@@ -281,7 +280,7 @@ ul.ledger li.empty { color: var(--muted); font-size: 13px; }
       CHORES.forEach(function (c, ci) { if ((day * 31 + ci * 17 + 7) % 10 < 2) ids.push(c.id); });
       if (ids.length) rec[key(new Date(y, m, day))] = ids;
     }
-    return { rec: rec, custom: [], ledger: seedLedger() };
+    return { rec: {}, custom: [], ledger: [] };
   }
   function seedLedger() {
     var y = today.getFullYear(), m = today.getMonth(), L = [];
@@ -291,7 +290,7 @@ ul.ledger li.empty { color: var(--muted); font-size: 13px; }
     return L;
   }
   function load() {
-    try { var s = localStorage.getItem(STORE); if (s) { var o = JSON.parse(s); if (o && o.rec && o.custom) { if (!o.ledger) o.ledger = seedLedger(); return o; } } } catch (e) {}
+    try { var s = localStorage.getItem(STORE); if (s) { var o = JSON.parse(s); if (o && o.rec && o.custom) { if (!o.ledger) o.ledger = []; return o; } } } catch (e) {}
     return seed();
   }
   function save() { try { localStorage.setItem(STORE, JSON.stringify(data)); } catch (e) {} }
@@ -500,7 +499,17 @@ ul.ledger li.empty { color: var(--muted); font-size: 13px; }
   document.getElementById("prev").onclick = function () { shift(-1); };
   document.getElementById("next").onclick = function () { shift(1); };
   document.getElementById("today").onclick = function () { cur = new Date(today); render(); };
-  document.getElementById("reset").onclick = function () { data = seed(); save(); adding = false; render(); };
+  var resetArmed = false, resetTimer = null;
+  document.getElementById("reset").onclick = function () {
+    var btn = this;
+    if (!resetArmed) {
+      resetArmed = true; btn.textContent = "再按一次確認清空";
+      resetTimer = setTimeout(function () { resetArmed = false; btn.textContent = "清空全部紀錄"; }, 4000);
+      return;
+    }
+    clearTimeout(resetTimer); resetArmed = false; btn.textContent = "清空全部紀錄";
+    data.rec = {}; data.ledger = []; save(); adding = false; render();
+  };
 
   document.getElementById("tabChores").onclick = function () { setView("chores"); };
   document.getElementById("tabLedger").onclick = function () { setView("ledger"); };
