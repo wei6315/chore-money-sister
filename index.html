@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23e3b341'/%3E%3Ccircle cx='32' cy='32' r='24' fill='none' stroke='%23b8892a' stroke-width='3'/%3E%3Ctext x='32' y='43' font-size='32' font-weight='700' text-anchor='middle' fill='%237a5a12' font-family='Arial,sans-serif'%3E$%3C/text%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>姊姊的家事零用錢</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: 上方分頁（家事／收支簿）；家事＝月結、日清單、週條；收支簿＝餘額、記一筆、明細 */
+:root {
+  --bg: #f3f1ec;
+  --surface: #fbfaf7;
+  --fg: #2b3a3f;
+  --muted: #7a868a;
+  --line: #e1ddd4;
+  --accent: #5f8f84;
+  --accent-soft: #dcebe6;
+  --warm: #c9a57a;
+  --out: #b4725a;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-num: "Nunito", "Noto Sans TC", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1d2528; --surface: #263034; --fg: #e8ece9; --muted: #93a0a3;
+    --line: #36434a; --accent: #7fb3a6; --accent-soft: #2d4540; --warm: #d3b48c; --out: #d99a85;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1d2528; --surface: #263034; --fg: #e8ece9; --muted: #93a0a3;
+  --line: #36434a; --accent: #7fb3a6; --accent-soft: #2d4540; --warm: #d3b48c; --out: #d99a85;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  font-size: 15px; line-height: 1.5;
+}
+.wrap { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: .02em; }
+.demo-tag { font-size: 12px; color: var(--muted); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+
+.dayhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dayhead .title { font-weight: 700; font-size: 16px; text-align: center; flex: 1; }
+.dayhead .title small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+.icon-btn {
+  border: 1px solid var(--line); background: transparent; color: var(--fg); width: 36px; height: 36px;
+  border-radius: 10px; cursor: pointer; font: inherit; font-size: 16px; line-height: 1;
+}
+.today-btn {
+  border: 1px solid var(--line); background: transparent; color: var(--muted); height: 36px; padding: 0 12px;
+  border-radius: 10px; cursor: pointer; font: inherit; font-size: 13px;
+}
+
+.big { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 6px; }
+.big .num { font-family: var(--font-num); font-weight: 800; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+.big .lab { color: var(--muted); font-size: 13px; }
+
+ul.chores { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; }
+ul.chores li { border-top: 1px solid var(--line); display: flex; align-items: center; gap: 4px; }
+ul.chores li:first-child { border-top: 0; }
+ul.chores li.sechead { border-top: 0; display: block; padding: 16px 2px 4px; }
+ul.chores li.sechead:first-child { padding-top: 6px; }
+ul.chores li.sechead b { font-size: 13px; letter-spacing: .06em; font-weight: 700; color: var(--fg); }
+ul.chores li.sechead span { font-size: 12px; color: var(--muted); margin-left: 8px; }
+ul.chores li.hint { border-top: 0; color: var(--muted); font-size: 13px; padding: 6px 2px 10px; }
+ul.chores li.gsep { margin-top: 10px; border-top: 2px solid var(--line); }
+label.row { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 2px; cursor: pointer; }
+label.row input {
+  appearance: none; -webkit-appearance: none; flex: none; width: 24px; height: 24px; margin: 0;
+  border: 2px solid var(--line); border-radius: 7px; background: transparent; display: grid; place-items: center; cursor: pointer;
+}
+label.row input:checked { background: var(--accent); border-color: var(--accent); }
+label.row input:checked::after {
+  content: ""; width: 6px; height: 11px; border: solid var(--surface); border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg);
+}
+label.row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label.row .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+label.row input:checked ~ .name { color: var(--muted); }
+label.row .price { font-family: var(--font-num); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--muted); }
+label.row input:checked ~ .price { color: var(--accent); }
+.del { flex: none; width: 28px; height: 28px; border: 0; background: transparent; color: var(--muted); border-radius: 8px; cursor: pointer; font-size: 18px; line-height: 1; }
+.del:hover { background: var(--accent-soft); }
+
+.add-wrap { margin-top: 4px; padding-top: 4px; }
+.add-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; color: var(--accent);
+  font: inherit; font-weight: 700; cursor: pointer; padding: 4px 2px; text-align: left;
+}
+.add-btn .ic { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); display: grid; place-items: center; flex: none; }
+.add-btn svg { width: 16px; height: 16px; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+.add-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.add-form input[type="text"], .add-form input[type="number"] {
+  font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-width: 0;
+}
+.add-form input[type="text"] { flex: 1 1 140px; }
+.add-form input[type="number"] { width: 84px; font-family: var(--font-num); font-weight: 800; }
+.add-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.add-form .ok { border: 0; background: var(--accent); color: var(--surface); font: inherit; font-weight: 700; padding: 9px 16px; border-radius: 10px; cursor: pointer; }
+.add-form .no { border: 1px solid var(--line); background: transparent; color: var(--muted); font: inherit; padding: 9px 14px; border-radius: 10px; cursor: pointer; }
+.err { color: #b4584a; font-size: 13px; width: 100%; margin: 0; }
+
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 10px; }
+.week button {
+  border: 1px solid var(--line); background: transparent; color: var(--fg); font: inherit; cursor: pointer;
+  border-radius: 10px; padding: 8px 0 7px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0;
+}
+.week button .wd { font-size: 11px; color: var(--muted); }
+.week button .d { font-weight: 700; font-family: var(--font-num); }
+.week button .amt { font-size: 11px; font-family: var(--font-num); font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; min-height: 16px; }
+.week button[aria-current="date"] { background: var(--accent-soft); border-color: var(--accent); }
+.h2 { font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: .06em; margin: 0; }
+
+.sum { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.sum .line { display: flex; justify-content: space-between; align-items: baseline; font-variant-numeric: tabular-nums; }
+.sum .line span:last-child { font-family: var(--font-num); font-weight: 800; }
+.sum .total { border-top: 1px solid var(--line); padding-top: 10px; font-weight: 700; }
+.sum .total span:last-child { font-size: 26px; color: var(--accent); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
+.tabs button, .tsel button { border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 500; padding: 9px 0; border-radius: 8px; cursor: pointer; }
+.tabs button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 700; }
+.view { display: flex; flex-direction: column; gap: 14px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.two .k { display: block; font-size: 12px; color: var(--muted); }
+.two .v { font-family: var(--font-num); font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; }
+.in { color: var(--accent); }
+.outc { color: var(--out); }
+.big .num.neg { color: var(--out); }
+.lform { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.lform .frow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.lform input { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-width: 0; }
+.lform input[type="number"] { flex: 1 1 110px; font-family: var(--font-num); font-weight: 800; }
+.lform input[type="date"] { flex: 1 1 140px; }
+.lform input[type="text"] { width: 100%; }
+.lform input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tsel { display: grid; grid-template-columns: 1fr 1fr; background: var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
+.tsel button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 700; }
+.lform .ok { border: 0; background: var(--accent); color: var(--surface); font: inherit; font-weight: 700; padding: 9px 20px; border-radius: 10px; cursor: pointer; }
+.lform .fill { border: 1px solid var(--line); background: transparent; color: var(--muted); font: inherit; font-size: 13px; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
+ul.ledger { list-style: none; margin: 6px 0 0; padding: 0; }
+ul.ledger li { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--line); padding: 10px 2px; }
+ul.ledger li:first-child { border-top: 0; }
+ul.ledger .dt { flex: none; width: 44px; font-family: var(--font-num); color: var(--muted); font-size: 13px; }
+ul.ledger .nt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+ul.ledger .am { font-family: var(--font-num); font-weight: 800; font-variant-numeric: tabular-nums; }
+ul.ledger li.empty { color: var(--muted); font-size: 13px; }
+.foot { display: flex; justify-content: space-between; gap: 12px; align-items: center; color: var(--muted); font-size: 12px; }
+.foot button { border: 0; background: transparent; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer; padding: 4px; }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>姊姊的家事零用錢</h1>
+    <span class="demo-tag">示範版・內含範例紀錄</span>
+  </header>
+
+  <div class="tabs" role="group" aria-label="分頁">
+    <button type="button" id="tabChores" aria-pressed="true">家事</button>
+    <button type="button" id="tabLedger" aria-pressed="false">收支簿</button>
+  </div>
+
+  <div class="view" id="viewChores">
+
+  <section class="card">
+    <p class="h2" id="monthLabel">本月結算</p>
+    <div class="sum">
+      <div class="line"><span>基本零用錢</span><span id="base">$100</span></div>
+      <div class="line"><span>家事收入（<span id="cnt" style="font-family:inherit;font-weight:400">0</span> 項）</span><span id="choreSum">$0</span></div>
+      <div class="line total"><span>本月合計</span><span id="monthTotal">$100</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="dayhead">
+      <button class="icon-btn" id="prev" aria-label="前一天">‹</button>
+      <div class="title" id="dateTitle"></div>
+      <button class="icon-btn" id="next" aria-label="後一天">›</button>
+    </div>
+    <div class="big"><span class="num" id="dayTotal">$0</span><span class="lab">今日賺到</span></div>
+    <ul class="chores" id="chores"></ul>
+    <div class="add-wrap" id="addWrap"></div>
+  </section>
+
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <p class="h2">本週</p>
+      <button class="today-btn" id="today">回到今天</button>
+    </div>
+    <div class="week" id="week"></div>
+  </section>
+
+  </div>
+
+  <div class="view" id="viewLedger" hidden>
+    <section class="card">
+      <p class="h2">目前餘額</p>
+      <div class="big"><span class="num" id="balance">$0</span></div>
+      <div class="two">
+        <div><span class="k" id="mInLab">本月收入</span><span class="v in" id="mIn">$0</span></div>
+        <div><span class="k" id="mOutLab">本月支出</span><span class="v outc" id="mOut">$0</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="h2">記一筆</p>
+      <form class="lform" id="lform">
+        <div class="tsel" role="group" aria-label="收入或支出">
+          <button type="button" id="tIn" aria-pressed="false">收入</button>
+          <button type="button" id="tOut" aria-pressed="true">支出</button>
+        </div>
+        <div class="frow">
+          <input type="date" id="lDate" aria-label="日期">
+          <input type="number" id="lAmt" placeholder="金額" min="1" max="99999" inputmode="numeric" aria-label="金額">
+        </div>
+        <input type="text" id="lNote" placeholder="備註，例如：買文具" maxlength="30" aria-label="備註" autocomplete="off">
+        <div class="frow">
+          <button class="ok" type="submit">記下來</button>
+          <button class="fill" type="button" id="fillPay"></button>
+        </div>
+        <p class="err" id="lErr" hidden></p>
+      </form>
+    </section>
+
+    <section class="card">
+      <p class="h2">明細</p>
+      <ul class="ledger" id="ledger"></ul>
+    </section>
+  </div>
+
+  <div class="foot">
+    <span>紀錄只存在這個瀏覽器</span>
+    <button id="reset">重設範例資料</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var BASE = 100;
+  // 依家事性質分四組（打掃／日常照顧／學習才藝／運動），組內依金額由高到低；組與組之間以粗線分隔
+  var CHORES = [
+    { id: "sweep", name: "掃地", price: 5, g: 0 },
+    { id: "mop", name: "拖地", price: 10, g: 0 },
+    { id: "wc", name: "洗廁所", price: 10, g: 0 },
+    { id: "toilet", name: "刷馬桶", price: 5, g: 0 },
+    { id: "dust", name: "擦灰塵", price: 5, g: 0 },
+    { id: "dish", name: "洗碗", price: 5, g: 1 },
+    { id: "cat", name: "梳貓毛", price: 5, g: 1 },
+    { id: "water", name: "澆花", price: 5, g: 1 },
+    { id: "hw", name: "寫評量", price: 5, g: 2 },
+    { id: "eng", name: "念英文", price: 5, g: 2 },
+    { id: "piano", name: "練琴", price: 5, g: 2 },
+    { id: "hike", name: "爬山", price: 10, g: 3 },
+    { id: "rope", name: "跳繩", price: 5, g: 3 }
+  ];
+  var WD = ["日", "一", "二", "三", "四", "五", "六"];
+  var STORE = "chore-money-a-v2";
+  var today = new Date(2026, 9, 23);
+  try { var real = new Date(); if (real.getFullYear() >= 2026) today = new Date(real.getFullYear(), real.getMonth(), real.getDate()); } catch (e) {}
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function key(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function money(n) { return "$" + n; }
+
+  function seed() {
+    var rec = {};
+    var y = today.getFullYear(), m = today.getMonth();
+    for (var day = 1; day < today.getDate(); day++) {
+      var ids = [];
+      CHORES.forEach(function (c, ci) { if ((day * 31 + ci * 17 + 7) % 10 < 2) ids.push(c.id); });
+      if (ids.length) rec[key(new Date(y, m, day))] = ids;
+    }
+    return { rec: rec, custom: [], ledger: seedLedger() };
+  }
+  function seedLedger() {
+    var y = today.getFullYear(), m = today.getMonth(), L = [];
+    [[1, "in", 120, "上月領的零用錢"], [6, "out", 35, "文具"], [12, "out", 60, "點心"], [18, "out", 25, "貼紙"]].forEach(function (r, i) {
+      if (r[0] <= today.getDate()) L.push({ id: "s" + i, date: key(new Date(y, m, r[0])), type: r[1], amt: r[2], note: r[3] });
+    });
+    return L;
+  }
+  function load() {
+    try { var s = localStorage.getItem(STORE); if (s) { var o = JSON.parse(s); if (o && o.rec && o.custom) { if (!o.ledger) o.ledger = seedLedger(); return o; } } } catch (e) {}
+    return seed();
+  }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(data)); } catch (e) {} }
+
+  var data = load();
+  var cur = new Date(today);
+  var adding = false, errMsg = "", view = "chores", ltype = "out";
+
+  function allChores() {
+    function byPrice(x, y) { return y.price - x.price; }
+    var common = CHORES.map(function (c) { return { id: c.id, name: c.name, price: c.price, g: c.g }; }).sort(function (x, y) { return x.g - y.g || y.price - x.price; });
+    var mine = data.custom.map(function (c) { return { id: c.id, name: c.name, price: c.price, g: 9, custom: true }; }).sort(byPrice);
+    return common.concat(mine);
+  }
+  function checked(d) { return data.rec[key(d)] || []; }
+  function dayTotal(d) {
+    var ids = checked(d), t = 0;
+    allChores().forEach(function (c) { if (ids.indexOf(c.id) > -1) t += c.price; });
+    return t;
+  }
+
+  function renderAdd() {
+    var w = document.getElementById("addWrap");
+    w.innerHTML = "";
+    if (!adding) {
+      var b = document.createElement("button");
+      b.className = "add-btn"; b.id = "openAdd"; b.type = "button";
+      b.innerHTML = '<span class="ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></span><span>新增</span>';
+      b.onclick = function () { adding = true; errMsg = ""; renderAdd(); var n = document.getElementById("newName"); if (n) n.focus(); };
+      w.appendChild(b);
+      return;
+    }
+    var f = document.createElement("form");
+    f.className = "add-form";
+    f.innerHTML =
+      '<input type="text" id="newName" placeholder="家事名稱" maxlength="20" aria-label="家事名稱" autocomplete="off">' +
+      '<input type="number" id="newPrice" value="5" min="1" max="999" inputmode="numeric" aria-label="單價">' +
+      '<button class="ok" type="submit">新增</button>' +
+      '<button class="no" type="button" id="cancelAdd">取消</button>' +
+      '<p class="err" id="addErr" hidden></p>';
+    f.onsubmit = function (e) {
+      e.preventDefault();
+      var name = document.getElementById("newName").value.trim();
+      var price = parseInt(document.getElementById("newPrice").value, 10);
+      var err = document.getElementById("addErr");
+      if (!name) { err.textContent = "請輸入家事名稱"; err.hidden = false; return; }
+      if (!(price > 0)) { err.textContent = "單價要大於 0"; err.hidden = false; return; }
+      data.custom.push({ id: "c" + Date.now(), name: name, price: price });
+      save(); adding = false; render();
+    };
+    w.appendChild(f);
+    document.getElementById("cancelAdd").onclick = function () { adding = false; renderAdd(); };
+  }
+
+  function monthChoreSum(ym) {
+    var sum = 0, all = allChores();
+    Object.keys(data.rec).forEach(function (dk) {
+      if (dk.indexOf(ym) === 0) all.forEach(function (c) { if (data.rec[dk].indexOf(c.id) > -1) sum += c.price; });
+    });
+    return sum;
+  }
+  function signed(n) { return (n < 0 ? "−" : "") + money(Math.abs(n)); }
+
+  function renderLedger() {
+    var ym = key(today).slice(0, 7), mm = today.getMonth() + 1;
+    var bal = 0, mi = 0, mo = 0;
+    data.ledger.forEach(function (e) {
+      bal += e.type === "in" ? e.amt : -e.amt;
+      if (e.date.indexOf(ym) === 0) { if (e.type === "in") mi += e.amt; else mo += e.amt; }
+    });
+    var bEl = document.getElementById("balance");
+    bEl.textContent = signed(bal);
+    bEl.className = "num" + (bal < 0 ? " neg" : "");
+    document.getElementById("mInLab").textContent = mm + " 月收入";
+    document.getElementById("mOutLab").textContent = mm + " 月支出";
+    document.getElementById("mIn").textContent = money(mi);
+    document.getElementById("mOut").textContent = money(mo);
+    document.getElementById("fillPay").textContent = "帶入 " + mm + " 月零用錢 " + money(BASE + monthChoreSum(ym));
+
+    var ul = document.getElementById("ledger");
+    ul.innerHTML = "";
+    var list = data.ledger.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.id < b.id ? 1 : -1); });
+    if (!list.length) {
+      var em = document.createElement("li"); em.className = "empty"; em.textContent = "還沒有紀錄，上面記下第一筆。"; ul.appendChild(em);
+    }
+    list.forEach(function (e) {
+      var li = document.createElement("li");
+      var dt = document.createElement("span"); dt.className = "dt";
+      dt.textContent = parseInt(e.date.slice(5, 7), 10) + "/" + parseInt(e.date.slice(8, 10), 10);
+      var nt = document.createElement("span"); nt.className = "nt"; nt.textContent = e.note || (e.type === "in" ? "收入" : "支出");
+      var am = document.createElement("span"); am.className = "am " + (e.type === "in" ? "in" : "outc");
+      am.textContent = (e.type === "in" ? "+" : "−") + money(e.amt);
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "del"; del.textContent = "×"; del.setAttribute("aria-label", "刪除這筆紀錄");
+      del.onclick = function () { data.ledger = data.ledger.filter(function (x) { return x.id !== e.id; }); save(); renderLedger(); };
+      li.appendChild(dt); li.appendChild(nt); li.appendChild(am); li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  function setType(t) {
+    ltype = t;
+    document.getElementById("tIn").setAttribute("aria-pressed", t === "in" ? "true" : "false");
+    document.getElementById("tOut").setAttribute("aria-pressed", t === "out" ? "true" : "false");
+  }
+  function setView(v) {
+    view = v;
+    document.getElementById("viewChores").hidden = v !== "chores";
+    document.getElementById("viewLedger").hidden = v !== "ledger";
+    document.getElementById("tabChores").setAttribute("aria-pressed", v === "chores" ? "true" : "false");
+    document.getElementById("tabLedger").setAttribute("aria-pressed", v === "ledger" ? "true" : "false");
+  }
+
+  function render(focusId) {
+    var isToday = key(cur) === key(today);
+    document.getElementById("dateTitle").innerHTML =
+      (cur.getMonth() + 1) + "月" + cur.getDate() + "日　週" + WD[cur.getDay()] +
+      "<small>" + (isToday ? "今天" : cur.getFullYear() + " 年") + "</small>";
+    document.getElementById("dayTotal").textContent = money(dayTotal(cur));
+
+    var ul = document.getElementById("chores");
+    ul.innerHTML = "";
+    var ids = checked(cur), prevG = null, sawPersonal = false;
+    function head(title, sub) {
+      var h = document.createElement("li");
+      h.className = "sechead";
+      h.innerHTML = "<b></b><span></span>";
+      h.firstChild.textContent = title;
+      h.lastChild.textContent = sub;
+      ul.appendChild(h);
+    }
+    allChores().forEach(function (c) {
+      if (c.custom) sawPersonal = true;
+      var li = document.createElement("li");
+      if (prevG !== null && c.g !== prevG) li.className = "gsep";
+      prevG = c.g;
+      var lab = document.createElement("label");
+      lab.className = "row";
+      var inp = document.createElement("input");
+      inp.type = "checkbox";
+      inp.id = "chk-" + c.id;
+      inp.checked = ids.indexOf(c.id) > -1;
+      inp.onchange = function () { toggle(c.id, inp.checked); };
+      var nm = document.createElement("span"); nm.className = "name"; nm.textContent = c.name;
+      var pr = document.createElement("span"); pr.className = "price"; pr.textContent = "+" + money(c.price);
+      lab.appendChild(inp); lab.appendChild(nm); lab.appendChild(pr);
+      li.appendChild(lab);
+      if (c.custom) {
+        var del = document.createElement("button");
+        del.type = "button"; del.className = "del"; del.textContent = "×";
+        del.setAttribute("aria-label", "移除 " + c.name);
+        del.onclick = function () {
+          data.custom = data.custom.filter(function (x) { return x.id !== c.id; });
+          save(); render();
+        };
+        li.appendChild(del);
+      }
+      ul.appendChild(li);
+    });
+
+    // 本週（週一到週日）
+    var wk = document.getElementById("week");
+    wk.innerHTML = "";
+    var mon = new Date(cur); mon.setDate(cur.getDate() - ((cur.getDay() + 6) % 7));
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(mon); d.setDate(mon.getDate() + i);
+      var t = dayTotal(d);
+      var b = document.createElement("button");
+      b.innerHTML = '<span class="wd">' + WD[d.getDay()] + '</span><span class="d">' + d.getDate() + '</span><span class="amt">' + (t ? money(t) : "") + "</span>";
+      if (key(d) === key(cur)) b.setAttribute("aria-current", "date");
+      (function (dd) { b.onclick = function () { cur = dd; render(); }; })(d);
+      wk.appendChild(b);
+    }
+
+    // 本月結算
+    var ym = cur.getFullYear() + "-" + pad(cur.getMonth() + 1);
+    var sum = 0, cnt = 0, all = allChores();
+    Object.keys(data.rec).forEach(function (dk) {
+      if (dk.indexOf(ym) === 0) {
+        all.forEach(function (c) { if (data.rec[dk].indexOf(c.id) > -1) { sum += c.price; cnt++; } });
+      }
+    });
+    document.getElementById("monthLabel").textContent = (cur.getMonth() + 1) + " 月結算";
+    document.getElementById("base").textContent = money(BASE);
+    document.getElementById("cnt").textContent = cnt;
+    document.getElementById("choreSum").textContent = money(sum);
+    document.getElementById("monthTotal").textContent = money(BASE + sum);
+
+    renderAdd();
+    renderLedger();
+    if (focusId) { var f = document.getElementById(focusId); if (f) f.focus(); }
+  }
+
+  function toggle(choreId, on) {
+    var dk = key(cur);
+    var arr = data.rec[dk] || [];
+    var i = arr.indexOf(choreId);
+    if (on && i < 0) arr.push(choreId);
+    if (!on && i > -1) arr.splice(i, 1);
+    if (arr.length) data.rec[dk] = arr; else delete data.rec[dk];
+    save();
+    render("chk-" + choreId);
+  }
+
+  function shift(n) { cur = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() + n); render(); }
+  document.getElementById("prev").onclick = function () { shift(-1); };
+  document.getElementById("next").onclick = function () { shift(1); };
+  document.getElementById("today").onclick = function () { cur = new Date(today); render(); };
+  document.getElementById("reset").onclick = function () { data = seed(); save(); adding = false; render(); };
+
+  document.getElementById("tabChores").onclick = function () { setView("chores"); };
+  document.getElementById("tabLedger").onclick = function () { setView("ledger"); };
+  document.getElementById("tIn").onclick = function () { setType("in"); };
+  document.getElementById("tOut").onclick = function () { setType("out"); };
+  document.getElementById("lDate").value = key(today);
+  document.getElementById("fillPay").onclick = function () {
+    var ym = key(today).slice(0, 7);
+    setType("in");
+    document.getElementById("lAmt").value = BASE + monthChoreSum(ym);
+    document.getElementById("lNote").value = (today.getMonth() + 1) + " 月零用錢";
+    document.getElementById("lDate").value = key(today);
+  };
+  document.getElementById("lform").onsubmit = function (e) {
+    e.preventDefault();
+    var amt = parseInt(document.getElementById("lAmt").value, 10);
+    var date = document.getElementById("lDate").value || key(today);
+    var note = document.getElementById("lNote").value.trim();
+    var err = document.getElementById("lErr");
+    if (!(amt > 0)) { err.textContent = "金額要大於 0"; err.hidden = false; return; }
+    err.hidden = true;
+    data.ledger.push({ id: "l" + Date.now(), date: date, type: ltype, amt: amt, note: note });
+    save();
+    document.getElementById("lAmt").value = "";
+    document.getElementById("lNote").value = "";
+    renderLedger();
+  };
+
+  setType("out");
+  render();
+})();
+</script>
+</body>
+</html>
