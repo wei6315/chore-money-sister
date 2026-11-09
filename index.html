@@ -358,6 +358,10 @@ ul.ledger li.empty { color: var(--muted); font-size: 13px; }
     });
     return sum;
   }
+  function prevMonth() {
+    var p = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    return { ym: p.getFullYear() + "-" + pad(p.getMonth() + 1), m: p.getMonth() + 1 };
+  }
   function signed(n) { return (n < 0 ? "−" : "") + money(Math.abs(n)); }
 
   function renderLedger() {
@@ -374,7 +378,8 @@ ul.ledger li.empty { color: var(--muted); font-size: 13px; }
     document.getElementById("mOutLab").textContent = mm + " 月支出";
     document.getElementById("mIn").textContent = money(mi);
     document.getElementById("mOut").textContent = money(mo);
-    document.getElementById("fillPay").textContent = "帶入 " + mm + " 月零用錢 " + money(BASE + monthChoreSum(ym));
+    var pm = prevMonth();
+    document.getElementById("fillPay").textContent = "帶入 " + pm.m + " 月零用錢 " + money(BASE + monthChoreSum(pm.ym));
 
     var ul = document.getElementById("ledger");
     ul.innerHTML = "";
@@ -523,10 +528,10 @@ ul.ledger li.empty { color: var(--muted); font-size: 13px; }
   document.getElementById("tOut").onclick = function () { setType("out"); };
   document.getElementById("lDate").value = key(today);
   document.getElementById("fillPay").onclick = function () {
-    var ym = key(today).slice(0, 7);
+    var pm = prevMonth();
     setType("in");
-    document.getElementById("lAmt").value = BASE + monthChoreSum(ym);
-    document.getElementById("lNote").value = (today.getMonth() + 1) + " 月零用錢";
+    document.getElementById("lAmt").value = BASE + monthChoreSum(pm.ym);
+    document.getElementById("lNote").value = pm.m + " 月零用錢";
     document.getElementById("lDate").value = key(today);
   };
   document.getElementById("lform").onsubmit = function (e) {
